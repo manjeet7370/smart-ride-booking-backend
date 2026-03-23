@@ -27,19 +27,45 @@ router.post("/register", async (req, res) => {
 
 // LOGIN
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    // user se data lo
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    // email se user find karo
+    const user = await User.findOne({ email });
 
-  if (!user) return res.status(400).json({ message: "User not found" });
+    // agar user nahi mila
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid email or password"
+      });
+    }
 
-  const isMatch = await bcrypt.compare(password, user.password);
+    // password check karo
+const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Invalid email or password"
+      });
+    }
 
-  if (!isMatch) return res.status(400).json({ message: "Wrong password" });
+    // token generate karo
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    // response bhejo
+    res.json({
+      message: "Login successful",
+      token: token
+    });
 
-  res.json({ token });
+  } catch (error) {
+    res.status(500).json({
+      message: "Something went wrong"
+    });
+  }
 });
-
 module.exports = router;
